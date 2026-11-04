@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= title %></title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/present.css">
+</head>
+<body class="present-body">
+<% var base = '/debriefs/' + debrief.id + '/present'; var d = debrief; %>
+<div class="present-toolbar">
+  <a href="/debriefs/<%= d.id %>" class="btn btn-sm btn-ghost-light">✕ יציאה</a>
+  <select id="slideJump" class="slide-jump" aria-label="מעבר לשקף">
+    <% slides.forEach(function(s, i){ %><option value="<%= i %>"><%= i + 1 %>. <%= s.title %></option><% }) %>
+  </select>
+  <span class="timer" id="timer" title="משך הישיבה">00:00</span>
+  <div class="spacer"></div>
+  <% if (manage) { %><button class="btn btn-sm btn-ghost-light" id="toggleEdit" type="button">✎ עריכה בישיבה</button><% } %>
+  
+  <button class="btn btn-sm btn-ghost-light" id="fullscreen" type="button">⛶ מסך מלא</button>
+</div>
+
+<div class="stage" id="stage" data-start="<%= startSlide %>">
+<% slides.forEach(function(s, i){ var ret = base + '?slide=' + i; %>
+  <section class="slide slide-<%= s.type %>" data-index="<%= i %>">
+    <% if (s.type === 'cover') { %>
+      <div class="cover">
+        <div class="cover-kicker">תחקיר</div>
+        <h1><%= d.title %></h1>
+        <div class="cover-meta">
+          <div>מס׳ תחקיר: <b><%= d.number %></b></div>
+          <div>תאריך האירוע: <b><%= fmtDate(d.eventDate) %></b></div>
+          <div>מחלקה מובילה: <b><%= leadDept ? leadDept.name : '-' %></b></div>
+          <div>Owner התחקיר: <b><%= userName(d.facilitatorId) %></b></div>
+          <div>מועד הישיבה: <b><%= fmtDate(d.meeting.date) %></b></div>
+        </div>
+      </div>
+    <% } else { %>
+      <header class="slide-head"><h2><%= s.title %></h2></header>
+      <div class="slide-content">
+      <% if (s.type === 'details') { %>
+        <table class="slide-table kv">
+          <tr><th>כותרת</th><td><%= d.title %></td></tr>
+          <tr><th>תאריך ושעה</th><td><%= fmtDate(d.eventDate) %> <%= d.eventTime %></td></tr>
+          <tr><th>מיקום</th><td><%= d.location || '-' %></td></tr>
+          <tr><th>קטגוריה</th><td><%= d.category || '-' %></td></tr>
+          <tr><th>חומרה</th><td><%- include('partials/badge', { item: severity }) %></td></tr>
+          <tr><th>מחלקה מובילה</th><td><%= leadDept ? leadDept.name : '-' %></td></tr>
+          <tr><th>השפעה / נזק</th><td><%- nl2br(d.impact || '-') %></td></tr>
+          <tr><th>פעולות מיידיות</th><td><%- nl2br(d.immediateActions || '-') %></td></tr>
+        </table>
+      <% } else if (s.type === 'summary') { %>
+        <div class="slide-text"><%- nl2br(d.summary) %></div>
+      <% } else if (s.type === 'timeline') { %>
+        <% if (!timeline.length) { %><p class="muted">לא הוזן ציר זמן</p><% } %>
+        <ul class="slide-timeline">
+          <% timeline.forEach(function(t){ %>
+            <li><span class="when"><%= t.date ? fmtDate(t.date) : '' %> <%= t.time %></span><span class="what"><%= t.description %></span><% if (t.source) { %><span class="src"><%= t.source %></span><% } %></li>
+          <% }) %>
+        </ul>
+      <% } else if (s.type === 'participants') { %>
+        <div class="dept-cards">
+          <% Object.keys(deptGroups).forEach(function(name){ %>
+            <div class="dept-card"><h3><%= name %></h3>
+              <% deptGroups[name].forEach(function(p){ %>
+                <div><%= p.user ? p.user.fullName : '-' %> <span class="muted"><%= p.user && p.user.jobTitle ? '· ' + p.user.jobTitle : '' %></span> <%= p.status === 'submitted' ? '✔' : '⏳' %></div>
+              <% }) %>
+            </div>
+          <% }) %>
+          <% if (!participants.length) { %><p class="muted">לא הוקצו משתתפים</p><% } %>
+        </div>
+      <% } else if (s.type === 'response') { var r = s.participant.response || {}; %>
+        <div class="response-grid">
+          <% fields.forEach(function(f){ if (!r[f.key]) return; %>
+            <div class="response-box rb-<%= f.key %>"><h4><%= f.label %></h4><div><%- nl2br(r[f.key]) %></div></div>
+          <% }) %>
+        </div>
+      <% } else if (s.type === 'findings') { %>
+        <div class="view-only"><%- include('partials/findings', { d: d, manage: false, ret: ret, departments: departments }) %></div>
+        <% if (manage) { %><div class="edit-panel"><%- include('partials/findings', { d: d, manage: true, ret: ret, departments: departments }) %></div><% } %>
+      <% } else if (s.type === 'conclusions') { %>
+        <div class="view-only"><%- include('partials/conclusions', { d: d, manage: false, ret: ret, tasks: tasks }) %></div>
+        <% if (manage) { %><div class="edit-panel"><%- include('partials/conclusions', { d: d, manage: true, ret: ret, tasks: tasks }) %></div><% } %>
+      <% } else if (s.type === 'tasks') { %>
+        <table class="slide-table">
+          <thead><tr><th>#</th><th>משימה</th><th>Owner</th><th>תאריך יעד</th><th>סטטוס</th><th>התקדמות</th></tr></thead>
+          <tbody>
+          <% tasks.forEach(function(t, k){ %>
+            <tr class="<%= isOverdue(t) ? 'row-overdue' : '' %>"><td><%= k + 1 %></td><td><%= t.title %></td><td><%= t.assignee ? t.assignee.fullName : '-' %></td><td><%= fmtDate(t.dueDate) %></td>
+              <td><%- include('partials/badge', { item: C.taskStatus(t.status) }) %></td><td><%- include('partials/progress', { value: t.progress || 0 }) %></td></tr>
+          <% }) %>
+          <% if (!tasks.length) { %><tr><td colspan="6" class="muted">טרם הוגדרו משימות</td></tr><% } %>
+          </tbody>
+        </table>
+        <% if (manage) { %>
+        <div class="edit-panel">
+          <form method="POST" action="/tasks" class="form quick-task">
+            <input type="hidden" name="debriefId" value="<%= d.id %>">
+            <input type="hidden" name="returnTo" value="<%= ret %>">
+            <input name="title" placeholder="משימה חדשה..." required>
+            <select name="conclusionId"><option value="">מסקנה קשורה...</option><% d.conclusions.forEach(function(c, k){ %><option value="<%= c.id %>"><%= k + 1 %>. <%= c.text.slice(0, 50) %></option><% }) %></select>
+            <select name="assigneeId" required><option value="">Owner...</option><% users.forEach(function(u){ %><option value="<%= u.id %>"><%= u.fullName %> (<%= deptName(u.departmentId) %>)</option><% }) %></select>
+            <input type="date" name="dueDate" required>
+            <select name="priority"><% C.PRIORITIES.forEach(function(p){ %><option value="<%= p.key %>" <%= p.key === 'medium' ? 'selected' : '' %>><%= p.label %></option><% }) %></select>
+            <button class="btn btn-primary">+ הוספה ושליחת מייל</button>
+          </form>
+        </div>
+        <% } %>
+      <% } else if (s.type === 'attachments') { %>
+        <div class="att-slide">
+          <% s.attachments.forEach(function(a){ var url = '/debriefs/' + d.id + '/attachments/' + a.id; %>
+            <% if (/^image\//.test(a.mimeType)) { %>
+              <figure><img src="<%= url %>?inline=1" alt="<%= a.originalName %>" data-zoom><figcaption><%= a.description || a.originalName %></figcaption></figure>
+            <% } else { %>
+              <a class="att-file" href="<%= url %>?inline=1" target="_blank"><span class="att-ext"><%= (a.originalName.split('.').pop() || '').toUpperCase() %></span><span><%= a.originalName %><% if (a.description) { %><br><small><%= a.description %></small><% } %></span></a>
+            <% } %>
+          <% }) %>
+        </div>
+      <% } else if (s.type === 'closing') { %>
+        <div class="closing-stats">
+          <div><b><%= d.findings.length %></b><span>ממצאים</span></div>
+          <div><b><%= d.conclusions.length %></b><span>מסקנות</span></div>
+          <div><b><%= tasks.length %></b><span>משימות לשיפור</span></div>
+          <div><b><%= participants.filter(function(p){return p.status==='submitted'}).length %>/<%= participants.length %></b><span>התייחסויות</span></div>
+        </div>
+        <div class="slide-text"><%- nl2br(d.closingSummary) %></div>
+        <% if (manage) { %>
+        <div class="edit-panel">
+          <form method="POST" action="/debriefs/<%= d.id %>/closing" class="form">
+            <input type="hidden" name="returnTo" value="<%= ret %>">
+            <textarea name="closingSummary" rows="3" placeholder="שורה תחתונה של התחקיר"><%= d.closingSummary %></textarea>
+            <button class="btn btn-primary btn-sm">שמירת סיכום</button>
+          </form>
+          <form method="POST" action="/debriefs/<%= d.id %>/meeting" class="form">
+            <input type="hidden" name="returnTo" value="<%= ret %>">
+            <label>הערות מהישיבה<textarea name="notes" rows="2"><%= d.meeting.notes %></textarea></label>
+            <button class="btn btn-sm">שמירת הערות</button>
+          </form>
+          <form method="POST" action="/debriefs/<%= d.id %>/status" class="inline">
+            <input type="hidden" name="returnTo" value="/debriefs/<%= d.id %>">
+            <button name="status" value="followup" class="btn btn-primary">סיום ישיבה ומעבר למעקב משימות ←</button>
+          </form>
+        </div>
+        <% } %>
+      <% } %>
+      </div>
+    <% } %>
+    <footer class="slide-foot"><span>תחקיר <%= d.number %> — <%= d.title %></span><span><%= i + 1 %> / <%= slides.length %></span></footer>
+  </section>
+<% }) %>
+</div>
+
+<button class="nav-arrow nav-prev" id="prev" aria-label="הקודם">›</button>
+<button class="nav-arrow nav-next" id="next" aria-label="הבא">‹</button>
+<script src="/js/app.js"></script>
+<script src="/js/present.js"></script>
+</body>
+</html>

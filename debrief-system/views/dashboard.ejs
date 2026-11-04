@@ -1,0 +1,105 @@
+<%- include('partials/top') %>
+<div class="page-head">
+  <h1>שלום <%= user.fullName %></h1>
+  <a class="btn btn-primary" href="/debriefs/new">+ פתיחת תחקיר חדש</a>
+</div>
+
+<div class="stats">
+  <a class="stat" href="/debriefs"><b><%= stats.openDebriefs %></b><span>תחקירים פתוחים</span></a>
+  <a class="stat" href="/debriefs?status=ready"><b><%= stats.awaitingMeeting %></b><span>ממתינים לישיבה</span></a>
+  <a class="stat" href="/tasks"><b><%= stats.openTasks %></b><span>משימות פתוחות</span></a>
+  <a class="stat stat-danger" href="/tasks?overdue=1"><b><%= stats.overdue %></b><span>משימות באיחור</span></a>
+  <a class="stat stat-success" href="/tasks?status=done"><b><%= stats.doneTasks %></b><span>משימות שהושלמו</span></a>
+  <div class="stat"><b><%= stats.avgProgress %>%</b><span>התקדמות ממוצעת</span></div>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>ממתין למילוי שלי <span class="count"><%= myPending.length %></span></h2>
+    <% if (!myPending.length) { %><p class="muted">אין תחקירים שממתינים להתייחסותך 👍</p><% } %>
+    <ul class="list">
+      <% myPending.forEach(function(x){ %>
+      <li>
+        <div><b><%= x.d.number %></b> — <%= x.d.title %>
+          <div class="muted small">מחלקה: <%= deptName(x.p.departmentId) %><%= x.d.responseDueDate ? ' · למילוי עד ' + fmtDate(x.d.responseDueDate) : '' %><%= x.p.status === 'draft' ? ' · טיוטה שמורה' : '' %></div>
+        </div>
+        <a class="btn btn-sm btn-primary" href="/respond/<%= x.p.token %>">למילוי</a>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>המשימות שלי <span class="count"><%= myTasks.length %></span></h2>
+    <% if (!myTasks.length) { %><p class="muted">אין משימות פתוחות</p><% } %>
+    <ul class="list">
+      <% myTasks.slice(0, 8).forEach(function(t){ var dl = daysLeft(t); %>
+      <li class="<%= isOverdue(t) ? 'row-overdue' : '' %>">
+        <div><a href="/tasks/<%= t.id %>"><%= t.title %></a>
+          <div class="muted small">יעד: <%= fmtDate(t.dueDate) %>
+            <% if (dl !== null && !isOverdue(t)) { %>(עוד <%= dl %> ימים)<% } %>
+            <% if (isOverdue(t)) { %><b class="text-danger">באיחור <%= -dl %> ימים</b><% } %>
+          </div>
+        </div>
+        <%- include('partials/progress', { value: t.progress || 0 }) %>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (myTasks.length > 8) { %><a href="/tasks?mine=1">לכל המשימות שלי ←</a><% } %>
+  </section>
+</div>
+
+<div class="grid-3">
+  <section class="card">
+    <h3>תחקירים לפי סטטוס</h3>
+    <% var maxS = Math.max.apply(null, byStatus.map(function(s){return s.count}).concat([1])); %>
+    <% byStatus.forEach(function(s){ %>
+      <div class="hbar"><span class="hbar-label"><%= s.label %></span><span class="hbar-track"><span class="hbar-fill c-<%= s.color %>" style="width:<%= s.count / maxS * 100 %>%"></span></span><b><%= s.count %></b></div>
+    <% }) %>
+  </section>
+  <section class="card">
+    <h3>תחקירים לפי חומרה</h3>
+    <% var maxV = Math.max.apply(null, bySeverity.map(function(s){return s.count}).concat([1])); %>
+    <% bySeverity.forEach(function(s){ %>
+      <div class="hbar"><span class="hbar-label"><%= s.label %></span><span class="hbar-track"><span class="hbar-fill c-<%= s.color %>" style="width:<%= s.count / maxV * 100 %>%"></span></span><b><%= s.count %></b></div>
+    <% }) %>
+  </section>
+  <section class="card">
+    <h3>גורמי שורש חוזרים</h3>
+    <% if (!rootCauseList.length) { %><p class="muted small">יוצג לאחר סיווג ממצאים בתחקירים</p><% } %>
+    <% var maxR = rootCauseList.length ? rootCauseList[0][1] : 1; %>
+    <% rootCauseList.forEach(function(r){ %>
+      <div class="hbar"><span class="hbar-label"><%= r[0] %></span><span class="hbar-track"><span class="hbar-fill c-blue" style="width:<%= r[1] / maxR * 100 %>%"></span></span><b><%= r[1] %></b></div>
+    <% }) %>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>תחקירים אחרונים</h2>
+    <table class="table">
+      <thead><tr><th>מס׳</th><th>כותרת</th><th>תאריך</th><th>חומרה</th><th>סטטוס</th></tr></thead>
+      <tbody>
+      <% recent.forEach(function(d){ %>
+        <tr><td><%= d.number %></td><td><a href="/debriefs/<%= d.id %>"><%= d.title %></a></td><td><%= fmtDate(d.eventDate) %></td>
+          <td><%- include('partials/badge', { item: C.severity(d.severity) }) %></td>
+          <td><%- include('partials/badge', { item: C.debriefStatus(d.status) }) %></td></tr>
+      <% }) %>
+      <% if (!recent.length) { %><tr><td colspan="5" class="muted">עדיין אין תחקירים</td></tr><% } %>
+      </tbody>
+    </table>
+  </section>
+  <section class="card">
+    <h2>עומס משימות פתוחות לפי מחלקה</h2>
+    <% if (!deptLoad.length) { %><p class="muted">אין משימות פתוחות</p><% } %>
+    <table class="table">
+      <% if (deptLoad.length) { %><thead><tr><th>מחלקה</th><th>פתוחות</th><th>באיחור</th></tr></thead><% } %>
+      <tbody>
+      <% deptLoad.forEach(function(x){ %>
+        <tr><td><a href="/tasks?dept=<%= x.dep.id %>"><%= x.dep.name %></a></td><td><%= x.open %></td><td class="<%= x.overdue ? 'text-danger' : '' %>"><%= x.overdue %></td></tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>
+<%- include('partials/bottom') %>

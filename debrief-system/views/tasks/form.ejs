@@ -1,0 +1,30 @@
+<%- include('../partials/top') %>
+<% var t = task || {}; %>
+<div class="page-head"><h1><%= task ? 'עריכת משימה' : 'משימה חדשה' %></h1></div>
+<form method="POST" action="<%= task ? '/tasks/' + t.id : '/tasks' %>" class="form card narrow-wide">
+  <input type="hidden" name="returnTo" value="<%= returnTo %>">
+  <label>תחקיר<select name="debriefId"><option value="">ללא תחקיר (משימה כללית)</option>
+    <% debriefs.forEach(function(d){ %><option value="<%= d.id %>" <%= (t.debriefId || (debrief && debrief.id)) === d.id ? 'selected' : '' %>><%= d.number %> — <%= d.title %></option><% }) %></select></label>
+  <% if (debrief && debrief.conclusions.length) { %>
+  <label>מסקנה קשורה<select name="conclusionId"><option value="">-</option>
+    <% debrief.conclusions.forEach(function(c, k){ %><option value="<%= c.id %>" <%= conclusionId === c.id ? 'selected' : '' %>><%= k + 1 %>. <%= c.text.slice(0, 90) %></option><% }) %></select></label>
+  <% } %>
+  <label>כותרת המשימה *<input name="title" value="<%= t.title || '' %>" required></label>
+  <label>פירוט<textarea name="description" rows="4"><%= t.description || '' %></textarea></label>
+  <label>מדד הצלחה (איך נדע שהמשימה הושגה?)<input name="successCriteria" value="<%= t.successCriteria || '' %>"></label>
+  <div class="grid-3">
+    <label>Owner (אחראי ביצוע) *<select name="assigneeId" required><option value="">בחירה...</option>
+      <% departments.forEach(function(dp){ var us = users.filter(function(u){return u.departmentId===dp.id}); if (!us.length) return; %>
+        <optgroup label="<%= dp.name %>"><% us.forEach(function(u){ %><option value="<%= u.id %>" <%= t.assigneeId === u.id ? 'selected' : '' %>><%= u.fullName %></option><% }) %></optgroup>
+      <% }) %>
+      <% users.filter(function(u){ return !departments.some(function(dp){return dp.id===u.departmentId}); }).forEach(function(u){ %><option value="<%= u.id %>" <%= t.assigneeId === u.id ? 'selected' : '' %>><%= u.fullName %></option><% }) %>
+    </select></label>
+    <label>תאריך יעד<input type="date" name="dueDate" value="<%= t.dueDate || '' %>"></label>
+    <label>עדיפות<select name="priority"><% C.PRIORITIES.forEach(function(p){ %><option value="<%= p.key %>" <%= (t.priority || 'medium') === p.key ? 'selected' : '' %>><%= p.label %></option><% }) %></select></label>
+  </div>
+  <label>תזכורת במייל ל-Owner — כל X ימים
+    <input type="number" name="reminderDays" min="0" max="90" value="<%= t.reminderDays === null || t.reminderDays === undefined ? '' : t.reminderDays %>" placeholder="ריק = ברירת מחדל (<%= settings.taskReminderDays %> ימים), 0 = ללא תזכורות"></label>
+  <% if (!task) { %><input type="hidden" name="notifyField" value="1"><label class="checkbox"><input type="checkbox" name="notify" value="on" checked> שליחת מייל ל-Owner עם יצירת המשימה</label><% } %>
+  <div class="form-actions"><button class="btn btn-primary">שמירה</button></div>
+</form>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,14 @@
+<%# שורות ציר זמן דינמיות. items: מערך, defaultDate %>
+<div class="timeline-editor" data-default-date="<%= defaultDate || '' %>">
+  <div class="tl-rows">
+    <% (items && items.length ? items : [{}]).forEach(function(t){ %>
+    <div class="tl-row">
+      <input type="date" name="tl_date" value="<%= t.date || '' %>" aria-label="תאריך">
+      <input type="time" name="tl_time" value="<%= t.time || '' %>" aria-label="שעה">
+      <input type="text" name="tl_desc" value="<%= t.description || '' %>" placeholder="מה קרה בשלב זה?" aria-label="תיאור">
+      <button type="button" class="btn btn-ghost btn-sm tl-remove" title="הסרה">✕</button>
+    </div>
+    <% }) %>
+  </div>
+  <button type="button" class="btn btn-secondary btn-sm tl-add">+ הוספת שלב בציר הזמן</button>
+</div>

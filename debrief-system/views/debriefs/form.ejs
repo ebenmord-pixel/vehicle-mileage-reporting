@@ -1,0 +1,42 @@
+<%- include('../partials/top') %>
+<% var d = debrief || {}; %>
+<div class="page-head">
+  <h1><%= debrief ? 'עריכת תחקיר ' + d.number : 'תחקיר חדש — מה קרה?' %></h1>
+  <% if (debrief) { %><a class="btn btn-ghost" href="/debriefs/<%= d.id %>">ביטול</a><% } %>
+</div>
+<% if (!debrief) { %>
+<ol class="steps">
+  <li class="current">1. תיאור האירוע</li><li>2. הקצאת משתתפים לפי מחלקות</li><li>3. כל משתתף ממלא את חלקו</li><li>4. ישיבת תחקיר: ממצאים ומסקנות</li><li>5. משימות ומעקב</li>
+</ol>
+<% } %>
+<form method="POST" action="<%= debrief ? '/debriefs/' + d.id : '/debriefs' %>" class="form card">
+  <div class="grid-2">
+    <label class="span-2">כותרת התחקיר *<input name="title" value="<%= d.title || '' %>" required placeholder="לדוגמה: השבתת קו ייצור 3"></label>
+    <label>תאריך האירוע<input type="date" name="eventDate" value="<%= d.eventDate || today() %>"></label>
+    <label>שעת האירוע<input type="time" name="eventTime" value="<%= d.eventTime || '' %>"></label>
+    <label>מיקום<input name="location" value="<%= d.location || '' %>"></label>
+    <label>קטגוריה<select name="category"><option value="">בחירה...</option>
+      <% C.CATEGORIES.forEach(function(c){ %><option <%= d.category === c ? 'selected' : '' %>><%= c %></option><% }) %></select></label>
+    <label>חומרה<select name="severity">
+      <% C.SEVERITIES.forEach(function(s){ %><option value="<%= s.key %>" <%= (d.severity || 'medium') === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %></select></label>
+    <label>מחלקה מובילה<select name="leadDepartmentId"><option value="">בחירה...</option>
+      <% departments.forEach(function(dp){ %><option value="<%= dp.id %>" <%= (d.leadDepartmentId || (debrief ? null : user.departmentId)) === dp.id ? 'selected' : '' %>><%= dp.name %></option><% }) %></select></label>
+    <label>Owner התחקיר (מנחה)<select name="facilitatorId">
+      <% users.forEach(function(u){ %><option value="<%= u.id %>" <%= (d.facilitatorId || user.id) === u.id ? 'selected' : '' %>><%= u.fullName %> (<%= deptName(u.departmentId) %>)</option><% }) %></select></label>
+    <label>מועד אחרון למילוי התייחסויות<input type="date" name="responseDueDate" value="<%= d.responseDueDate || '' %>"></label>
+    <label>תזכורת במייל למי שטרם מילא — כל X ימים
+      <input type="number" name="reminderDays" min="0" max="90" value="<%= d.reminderDays === null || d.reminderDays === undefined ? '' : d.reminderDays %>" placeholder="ברירת מחדל מההגדרות (0 = ללא)"></label>
+  </div>
+  <label>מה קרה? (תיאור האירוע) *<textarea name="summary" rows="7" required placeholder="תארו את האירוע: מה קרה, איך התגלה, מי היה מעורב..."><%= d.summary || '' %></textarea></label>
+  <div class="grid-2">
+    <label>השפעה / נזק<textarea name="impact" rows="3" placeholder="השבתה, עלות, לקוחות שנפגעו..."><%= d.impact || '' %></textarea></label>
+    <label>פעולות מיידיות שבוצעו<textarea name="immediateActions" rows="3"><%= d.immediateActions || '' %></textarea></label>
+  </div>
+  <h3>ציר זמן</h3>
+  <p class="muted small">ניתן להוסיף שלבים כעת; כל משתתף יוכל להוסיף שלבים מנקודת מבטו, והכול ימוזג לציר זמן אחד במצגת.</p>
+  <%- include('../partials/timeline-rows', { items: d.timeline, defaultDate: d.eventDate }) %>
+  <div class="form-actions">
+    <button class="btn btn-primary"><%= debrief ? 'שמירה' : 'שמירה והמשך להקצאת משתתפים ←' %></button>
+  </div>
+</form>
+<%- include('../partials/bottom') %>

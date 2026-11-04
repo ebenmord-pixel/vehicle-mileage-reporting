@@ -1,0 +1,9 @@
+<select name="type" aria-label="סוג">
+  <% C.FINDING_TYPES.forEach(function(t){ %><option value="<%= t.key %>" <%= (f.type || 'negative') === t.key ? 'selected' : '' %>><%= t.label %></option><% }) %>
+</select>
+<select name="rootCause" aria-label="גורם שורש"><option value="">גורם שורש...</option>
+  <% C.ROOT_CAUSE_TYPES.forEach(function(r){ %><option <%= f.rootCause === r ? 'selected' : '' %>><%= r %></option><% }) %>
+</select>
+<select name="departmentId" aria-label="מחלקה"><option value="">מחלקה...</option>
+  <% departments.forEach(function(dp){ %><option value="<%= dp.id %>" <%= f.departmentId === dp.id ? 'selected' : '' %>><%= dp.name %></option><% }) %>
+</select>

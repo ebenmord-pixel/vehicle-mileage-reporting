@@ -1,0 +1,12 @@
+<%- include('partials/top') %>
+<div class="login-wrap">
+  <form class="card login-card" method="POST" action="/login">
+    <h1>כניסה למערכת ניהול תחקירים</h1>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <input type="hidden" name="next" value="<%= next %>">
+    <label>שם משתמש<input name="username" autocomplete="username" required autofocus></label>
+    <label>סיסמה<input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="btn btn-primary btn-block">כניסה</button>
+  </form>
+</div>
+<%- include('partials/bottom') %>

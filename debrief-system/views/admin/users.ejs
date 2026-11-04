@@ -1,0 +1,29 @@
+<%- include('../partials/top') %>
+<div class="page-head"><h1>ניהול</h1><a class="btn btn-primary" href="/admin/users/new">+ משתמש חדש</a></div>
+<%- include('_tabs') %>
+<div class="card table-wrap">
+<table class="table">
+  <thead><tr><th>שם</th><th>שם משתמש</th><th>מחלקה</th><th>תפקיד</th><th>מייל</th><th>הרשאה</th><th>סטטוס</th><th></th></tr></thead>
+  <tbody>
+  <% users.forEach(function(u){ %>
+    <tr class="<%= u.active === false ? 'muted' : '' %>">
+      <td><b><%= u.fullName %></b></td><td dir="ltr"><%= u.username %></td><td><%= deptName(u.departmentId) %></td><td><%= u.jobTitle || '' %></td>
+      <td dir="ltr" class="small"><%= u.email || '—' %></td>
+      <td><%= u.role === 'admin' ? 'מנהל מערכת' : 'משתמש' %></td>
+      <td><%= u.active === false ? 'מושבת' : 'פעיל' %></td>
+      <td><a class="btn btn-xs btn-ghost" href="/admin/users/<%= u.id %>/edit">✎ עריכה</a></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+</div>
+<details class="card">
+  <summary><b>ייבוא משתמשים בכמות (הדבקה מאקסל)</b></summary>
+  <form method="POST" action="/admin/users/import" class="form">
+    <p class="muted small">שורה לכל משתמש, עמודות מופרדות בטאב (העתקה מאקסל) או בפסיק, בסדר: <b>שם מלא, שם משתמש, מייל, מחלקה, תפקיד</b>. מחלקה שלא קיימת תיווצר אוטומטית.</p>
+    <textarea name="rows" rows="6" dir="auto" placeholder="ישראל ישראלי	israel	israel@company.co.il	תפעול	מנהל משמרת"></textarea>
+    <label>סיסמה ראשונית לכל המשתמשים<input type="text" name="password" minlength="6" required></label>
+    <button class="btn btn-primary">ייבוא</button>
+  </form>
+</details>
+<%- include('../partials/bottom') %>

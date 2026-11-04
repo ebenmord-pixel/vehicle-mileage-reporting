@@ -1,0 +1,41 @@
+<%- include('../partials/top') %>
+<div class="page-head">
+  <h1>תחקירים</h1>
+  <a class="btn btn-primary" href="/debriefs/new">+ פתיחת תחקיר חדש</a>
+</div>
+<form class="filters card" method="GET">
+  <input name="search" value="<%= filters.search || '' %>" placeholder="חיפוש חופשי...">
+  <select name="status"><option value="">כל הסטטוסים</option>
+    <% C.DEBRIEF_STATUSES.forEach(function(s){ %><option value="<%= s.key %>" <%= filters.status === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %>
+  </select>
+  <select name="severity"><option value="">כל רמות החומרה</option>
+    <% C.SEVERITIES.forEach(function(s){ %><option value="<%= s.key %>" <%= filters.severity === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %>
+  </select>
+  <select name="dept"><option value="">כל המחלקות</option>
+    <% departments.forEach(function(dp){ %><option value="<%= dp.id %>" <%= Number(filters.dept) === dp.id ? 'selected' : '' %>><%= dp.name %></option><% }) %>
+  </select>
+  <button class="btn">סינון</button>
+  <a href="/debriefs" class="btn btn-ghost">ניקוי</a>
+</form>
+<div class="card">
+<table class="table">
+  <thead><tr><th>מס׳</th><th>כותרת</th><th>תאריך אירוע</th><th>מחלקה מובילה</th><th>חומרה</th><th>סטטוס</th><th>התייחסויות</th><th>משימות</th><th></th></tr></thead>
+  <tbody>
+  <% rows.forEach(function(r){ var d = r.d; %>
+    <tr>
+      <td><%= d.number %></td>
+      <td><a href="/debriefs/<%= d.id %>"><b><%= d.title %></b></a></td>
+      <td><%= fmtDate(d.eventDate) %></td>
+      <td><%= deptName(d.leadDepartmentId) %></td>
+      <td><%- include('../partials/badge', { item: C.severity(d.severity) }) %></td>
+      <td><%- include('../partials/badge', { item: C.debriefStatus(d.status) }) %></td>
+      <td><%= r.submitted %>/<%= r.total %></td>
+      <td><%= r.doneTasks %>/<%= r.tasks.length %></td>
+      <td class="nowrap"><a class="btn btn-sm btn-secondary" href="/debriefs/<%= d.id %>/present">▶ מצגת</a></td>
+    </tr>
+  <% }) %>
+  <% if (!rows.length) { %><tr><td colspan="9" class="muted center">לא נמצאו תחקירים</td></tr><% } %>
+  </tbody>
+</table>
+</div>
+<%- include('../partials/bottom') %>

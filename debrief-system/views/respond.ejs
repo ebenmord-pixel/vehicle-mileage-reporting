@@ -1,0 +1,36 @@
+<%- include('partials/top') %>
+<div class="respond-head card">
+  <div class="muted">תחקיר <%= d.number %> · <%= C.severity(d.severity).label %> · אירוע מתאריך <%= fmtDate(d.eventDate) %></div>
+  <h1><%= d.title %></h1>
+  <p>שלום <b><%= respUser ? respUser.fullName : '' %></b>, הוקצית לתחקיר זה כנציג/ת <b><%= dept ? dept.name : '' %></b>. נא למלא את החלק שלך.
+    <% if (d.responseDueDate) { %><br><b>מועד אחרון למילוי: <%= fmtDate(d.responseDueDate) %></b><% } %></p>
+  <% if (p.request) { %><div class="alert alert-info"><b>מה מבקשים ממך:</b> <%= p.request %></div><% } %>
+  <details open>
+    <summary><b>מה קרה? — תיאור פותח התחקיר</b></summary>
+    <div class="prose"><%- nl2br(d.summary) %></div>
+    <% if (d.timeline.length) { %>
+      <ul class="timeline"><% d.timeline.forEach(function(t){ %><li><span class="tl-when"><%= t.date ? fmtDate(t.date) : '' %> <%= t.time %></span><%= t.description %></li><% }) %></ul>
+    <% } %>
+  </details>
+</div>
+
+<% var r = p.response || {}; %>
+<% if (locked) { %>
+  <div class="alert alert-success">ההתייחסות שלך הוגשה<%= p.submittedAt ? ' ב-' + fmtDateTime(p.submittedAt) : '' %>. תודה! לתיקון יש לפנות למנהל התחקיר.</div>
+  <div class="card">
+    <% fields.forEach(function(f){ if (!r[f.key]) return; %><h4><%= f.label %></h4><div class="prose"><%- nl2br(r[f.key]) %></div><% }) %>
+  </div>
+<% } else { %>
+<form method="POST" class="form card">
+  <% fields.forEach(function(f){ %>
+    <label><%= f.label %><%= f.required ? ' *' : '' %><textarea name="<%= f.key %>" rows="<%= f.rows %>"><%= r[f.key] || '' %></textarea></label>
+  <% }) %>
+  <h3>ציר זמן מנקודת המבט שלי (לא חובה)</h3>
+  <%- include('partials/timeline-rows', { items: r.timeline, defaultDate: d.eventDate }) %>
+  <div class="form-actions">
+    <button name="action" value="draft" class="btn btn-secondary">שמירת טיוטה</button>
+    <button name="action" value="submit" class="btn btn-primary" data-confirm="להגיש את ההתייחסות? לאחר ההגשה לא ניתן יהיה לערוך.">הגשה</button>
+  </div>
+</form>
+<% } %>
+<%- include('partials/bottom') %>

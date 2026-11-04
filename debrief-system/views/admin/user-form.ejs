@@ -1,0 +1,20 @@
+<%- include('../partials/top') %>
+<% var x = u || {}; %>
+<h1><%= u ? 'עריכת משתמש' : 'משתמש חדש' %></h1>
+<%- include('_tabs') %>
+<form method="POST" action="<%= u ? '/admin/users/' + x.id : '/admin/users' %>" class="form card narrow-wide">
+  <div class="grid-2">
+    <label>שם מלא *<input name="fullName" value="<%= x.fullName || '' %>" required></label>
+    <label>שם משתמש *<input name="username" value="<%= x.username || '' %>" required dir="ltr"></label>
+    <label>מייל<input type="email" name="email" value="<%= x.email || '' %>" dir="ltr"></label>
+    <label>טלפון<input name="phone" value="<%= x.phone || '' %>" dir="ltr"></label>
+    <label>מחלקה<select name="departmentId"><option value="">-</option><% departments.forEach(function(dp){ %><option value="<%= dp.id %>" <%= x.departmentId === dp.id ? 'selected' : '' %>><%= dp.name %></option><% }) %></select></label>
+    <label>תפקיד<input name="jobTitle" value="<%= x.jobTitle || '' %>"></label>
+    <label>הרשאה<select name="role"><option value="user">משתמש</option><option value="admin" <%= x.role === 'admin' ? 'selected' : '' %>>מנהל מערכת</option></select></label>
+    <label>סטטוס<select name="active"><option value="on">פעיל</option><option value="off" <%= x.active === false ? 'selected' : '' %>>מושבת</option></select></label>
+    <label><%= u ? 'סיסמה חדשה (ריק = ללא שינוי)' : 'סיסמה ראשונית *' %><input type="text" name="password" <%= u ? '' : 'required minlength=6' %> autocomplete="new-password"></label>
+  </div>
+  <% if (!u) { %><label class="checkbox"><input type="checkbox" name="sendWelcome" checked> שליחת מייל פתיחת משתמש</label><% } %>
+  <div class="form-actions"><button class="btn btn-primary">שמירה</button><a class="btn btn-ghost" href="/admin/users">ביטול</a></div>
+</form>
+<%- include('../partials/bottom') %>

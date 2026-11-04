@@ -1,0 +1,27 @@
+<%- include('../partials/top') %>
+<h1>ניהול</h1>
+<%- include('_tabs') %>
+<div class="grid-2">
+<form method="POST" action="/admin/settings" class="form card">
+  <h2>תזכורות אוטומטיות במייל</h2>
+  <p class="muted small">התזכורות נשלחות פעם ביום (א׳–ה׳) בשעה שנקבעה, לכל מי שהגיע תורו לפי "כל X ימים". 0 = כבוי. ניתן לקבוע ערך שונה לכל משימה ולכל תחקיר.</p>
+  <label>תזכורת ל-Owner של משימה פתוחה — כל X ימים<input type="number" min="0" name="taskReminderDays" value="<%= s.taskReminderDays %>"></label>
+  <label>משימה באיחור — תזכורת כל X ימים<input type="number" min="0" name="overdueReminderDays" value="<%= s.overdueReminderDays %>"></label>
+  <label>משתתף שטרם מילא את חלקו בתחקיר — כל X ימים<input type="number" min="0" name="responseReminderDays" value="<%= s.responseReminderDays %>"></label>
+  <label>סיכום ל-Owner התחקיר (משימות באיחור וממתינים) — כל X ימים<input type="number" min="0" name="ownerDigestDays" value="<%= s.ownerDigestDays %>"></label>
+  <label>שעת שליחה (0–23)<input type="number" min="0" max="23" name="reminderHour" value="<%= s.reminderHour %>"></label>
+  <button class="btn btn-primary">שמירה</button>
+</form>
+<div class="card">
+  <h2>מצב שליחת מיילים</h2>
+  <% if (smtp) { %><div class="alert alert-success">SMTP מוגדר — מיילים נשלחים בפועל.</div>
+  <% } else { %><div class="alert alert-warning">SMTP לא מוגדר. מיילים נשמרים בקובץ data/outbox.log. להגדרה — ראו README (משתני SMTP_USER / SMTP_PASS בקובץ ‎.env).</div><% } %>
+  <form method="POST" action="/admin/settings/test-mail" class="inline"><button class="btn btn-secondary" <%= user.email ? '' : 'disabled' %>>שליחת מייל בדיקה אליי</button></form>
+  <% if (!user.email) { %><p class="muted small">הגדירו מייל בפרופיל כדי לשלוח בדיקה.</p><% } %>
+  <h3>הרצה ידנית</h3>
+  <p class="muted small">שולח עכשיו את כל התזכורות שהגיע זמנן (לא ישלח שוב למי שקיבל לאחרונה).</p>
+  <form method="POST" action="/admin/settings/run-now" class="inline"><button class="btn">▶ הרצת תזכורות עכשיו</button></form>
+  <% if (lastRun) { %><p class="muted small">הרצה אחרונה: <%= fmtDateTime(lastRun.at) %> — משימות <%= lastRun.tasks %>, התייחסויות <%= lastRun.responses %>, סיכומי Owner <%= lastRun.owners %></p><% } %>
+</div>
+</div>
+<%- include('../partials/bottom') %>

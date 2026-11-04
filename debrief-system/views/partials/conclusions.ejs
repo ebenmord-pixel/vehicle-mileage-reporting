@@ -1,0 +1,40 @@
+<%# מסקנות. d, manage, ret, tasks %>
+<% if (!d.conclusions.length) { %><p class="muted">טרם הוזנו מסקנות.</p><% } %>
+<ol class="items">
+<% d.conclusions.forEach(function(c, i){ var related = tasks.filter(function(t){ return t.conclusionId === c.id; }); var fi = d.findings.findIndex(function(f){return f.id===c.findingId}); %>
+  <li class="item">
+    <div class="item-body">
+      <div><%- nl2br(c.text) %></div>
+      <div class="item-meta">
+        <% if (fi >= 0) { %><span class="badge badge-gray">בעקבות ממצא <%= fi + 1 %></span><% } %>
+        <% related.forEach(function(t){ %><a class="badge badge-<%= C.taskStatus(t.status).color %>" href="/tasks/<%= t.id %>">משימה: <%= t.title %> · <%= userName(t.assigneeId) %> · <%= t.progress || 0 %>%</a><% }) %>
+      </div>
+    </div>
+    <% if (manage) { %>
+    <div class="item-actions">
+      <a class="btn btn-xs btn-secondary" href="/tasks/new?debriefId=<%= d.id %>&conclusionId=<%= c.id %>&returnTo=<%= encodeURIComponent(ret) %>">+ משימה</a>
+      <form method="POST" action="/debriefs/<%= d.id %>/conclusions/<%= c.id %>/move" class="inline"><input type="hidden" name="returnTo" value="<%= ret %>"><button name="dir" value="up" class="btn btn-xs btn-ghost" <%= i === 0 ? 'disabled' : '' %>>▲</button><button name="dir" value="down" class="btn btn-xs btn-ghost" <%= i === d.conclusions.length - 1 ? 'disabled' : '' %>>▼</button></form>
+      <details class="edit-pop"><summary class="btn btn-xs btn-ghost">✎</summary>
+        <form method="POST" action="/debriefs/<%= d.id %>/conclusions/<%= c.id %>" class="form">
+          <input type="hidden" name="returnTo" value="<%= ret %>">
+          <textarea name="text" rows="3"><%= c.text %></textarea>
+          <select name="findingId"><option value="">קשור לממצא...</option><% d.findings.forEach(function(f, k){ %><option value="<%= f.id %>" <%= c.findingId === f.id ? 'selected' : '' %>><%= k + 1 %>. <%= f.text.slice(0, 60) %></option><% }) %></select>
+          <button class="btn btn-sm btn-primary">שמירה</button>
+        </form>
+      </details>
+      <form method="POST" action="/debriefs/<%= d.id %>/conclusions/<%= c.id %>/delete" class="inline" data-confirm="למחוק את המסקנה?"><input type="hidden" name="returnTo" value="<%= ret %>"><button class="btn btn-xs btn-ghost text-danger">✕</button></form>
+    </div>
+    <% } %>
+  </li>
+<% }) %>
+</ol>
+<% if (manage) { %>
+<form method="POST" action="/debriefs/<%= d.id %>/conclusions" class="form add-item">
+  <input type="hidden" name="returnTo" value="<%= ret %>">
+  <textarea name="text" rows="2" placeholder="מסקנה / לקח חדש..." required></textarea>
+  <div class="row">
+    <select name="findingId"><option value="">קשור לממצא (לא חובה)...</option><% d.findings.forEach(function(f, k){ %><option value="<%= f.id %>"><%= k + 1 %>. <%= f.text.slice(0, 60) %></option><% }) %></select>
+    <button class="btn btn-primary">+ הוספת מסקנה</button>
+  </div>
+</form>
+<% } %>

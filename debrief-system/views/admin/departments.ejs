@@ -1,0 +1,29 @@
+<%- include('../partials/top') %>
+<h1>ניהול</h1>
+<%- include('_tabs') %>
+<div class="card">
+<table class="table">
+  <thead><tr><th>מחלקה</th><th>מנהל/ת מחלקה</th><th>משתמשים</th><th></th></tr></thead>
+  <tbody>
+  <% deps.forEach(function(dp){ %>
+    <tr>
+      <td colspan="2">
+        <form method="POST" action="/admin/departments/<%= dp.id %>" class="row">
+          <input name="name" value="<%= dp.name %>">
+          <select name="managerId"><option value="">ללא מנהל/ת</option><% users.forEach(function(u){ %><option value="<%= u.id %>" <%= dp.managerId === u.id ? 'selected' : '' %>><%= u.fullName %></option><% }) %></select>
+          <button class="btn btn-xs">שמירה</button>
+        </form>
+      </td>
+      <td><%= dp.userCount %></td>
+      <td><form method="POST" action="/admin/departments/<%= dp.id %>/delete" data-confirm="למחוק את המחלקה?"><button class="btn btn-xs btn-ghost text-danger" <%= dp.userCount ? 'disabled' : '' %>>מחיקה</button></form></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>
+<form method="POST" action="/admin/departments" class="row add-item">
+  <input name="name" placeholder="שם מחלקה חדשה" required>
+  <select name="managerId"><option value="">מנהל/ת...</option><% users.forEach(function(u){ %><option value="<%= u.id %>"><%= u.fullName %></option><% }) %></select>
+  <button class="btn btn-primary">+ הוספה</button>
+</form>
+</div>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,89 @@
+<%- include('partials/top') %>
+<div class="page-head">
+  <div><h1>טבלת מעקב שיפורים</h1><p class="muted">כל התחקירים ומצב יישום המשימות שנגזרו מהם. לחיצה על שורה פותחת את המשימות.</p></div>
+  <div class="actions">
+    <a class="btn btn-secondary" href="/tracking/export.xlsx?<%= new URLSearchParams(filters).toString() %>">⬇ ייצוא לאקסל</a>
+    <a class="btn btn-primary" href="/debriefs/new">+ תחקיר חדש</a>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><b><%= totals.debriefs %></b><span>תחקירים</span></div>
+  <div class="stat"><b><%= totals.tasks %></b><span>משימות לשיפור</span></div>
+  <div class="stat"><b><%= totals.open %></b><span>פתוחות</span></div>
+  <a class="stat stat-danger" href="?<%= new URLSearchParams(Object.assign({}, filters, { health: 'red' })).toString() %>"><b><%= totals.overdue %></b><span>באיחור</span></a>
+  <div class="stat"><b><%= totals.progress %>%</b><span>התקדמות ממוצעת</span></div>
+</div>
+<form class="filters card" method="GET">
+  <input name="search" value="<%= filters.search || '' %>" placeholder="חיפוש...">
+  <select name="status">
+    <option value="open" <%= filters.status === 'open' ? 'selected' : '' %>>פתוחים (לא נסגרו)</option>
+    <option value="" <%= !filters.status ? 'selected' : '' %>>הכול</option>
+    <% C.DEBRIEF_STATUSES.forEach(function(s){ %><option value="<%= s.key %>" <%= filters.status === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %>
+  </select>
+  <select name="health"><option value="">כל מצבי המעקב</option>
+    <option value="red" <%= filters.health === 'red' ? 'selected' : '' %>>🔴 יש משימות באיחור</option>
+    <option value="yellow" <%= filters.health === 'yellow' ? 'selected' : '' %>>🟡 דורש תשומת לב</option>
+    <option value="green" <%= filters.health === 'green' ? 'selected' : '' %>>🟢 תקין</option>
+  </select>
+  <select name="severity"><option value="">כל רמות החומרה</option><% C.SEVERITIES.forEach(function(s){ %><option value="<%= s.key %>" <%= filters.severity === s.key ? 'selected' : '' %>><%= s.label %></option><% }) %></select>
+  <select name="dept"><option value="">כל המחלקות</option><% departments.forEach(function(dp){ %><option value="<%= dp.id %>" <%= Number(filters.dept) === dp.id ? 'selected' : '' %>><%= dp.name %></option><% }) %></select>
+  <select name="year"><option value="">כל השנים</option><% years.forEach(function(y){ %><option <%= filters.year === y ? 'selected' : '' %>><%= y %></option><% }) %></select>
+  <button class="btn">סינון</button>
+</form>
+<div class="card table-wrap">
+<table class="table tracking">
+  <thead><tr><th></th><th>מס׳</th><th>תחקיר</th><th>תאריך</th><th>חומרה</th><th>Owner</th><th>סטטוס</th><th>התייחסויות</th><th>ממצאים / מסקנות</th><th>משימות</th><th>באיחור</th><th>יעד קרוב</th><th style="min-width:130px">התקדמות</th><th></th></tr></thead>
+  <% rows.forEach(function(r){ var d = r.d; %>
+  <tbody class="track-group">
+    <tr class="track-row" data-toggle="tr-<%= d.id %>">
+      <td><span class="health health-<%= r.healthKey %>" title="<%= r.healthKey === 'red' ? 'יש משימות באיחור' : r.healthKey === 'yellow' ? 'דורש תשומת לב' : 'תקין' %>"></span></td>
+      <td class="nowrap"><%= d.number %></td>
+      <td><a href="/debriefs/<%= d.id %>"><b><%= d.title %></b></a><div class="muted small"><%= deptName(d.leadDepartmentId) %></div></td>
+      <td class="nowrap"><%= fmtDate(d.eventDate) %></td>
+      <td><%- include('partials/badge', { item: C.severity(d.severity) }) %></td>
+      <td><%= userName(d.facilitatorId) %></td>
+      <td><%- include('partials/badge', { item: C.debriefStatus(d.status) }) %></td>
+      <td><%= r.submitted %>/<%= d.participants.length %></td>
+      <td><%= d.findings.length %> / <%= d.conclusions.length %></td>
+      <td><%= r.tasks.length - r.open.length %>/<%= r.tasks.length %> הושלמו</td>
+      <td class="<%= r.overdue.length ? 'text-danger' : '' %>"><b><%= r.overdue.length %></b></td>
+      <td class="nowrap"><%= fmtDate(r.nextDue) %></td>
+      <td><%- include('partials/progress', { value: r.progress }) %></td>
+      <td class="nowrap"><a class="btn btn-xs btn-secondary" href="/debriefs/<%= d.id %>/present">▶</a> <button type="button" class="btn btn-xs btn-ghost expand" aria-label="הצגת משימות">▾</button></td>
+    </tr>
+    <tr class="track-tasks" id="tr-<%= d.id %>" hidden>
+      <td colspan="14">
+        <% if (!r.tasks.length) { %><p class="muted">אין משימות לתחקיר זה. <a href="/tasks/new?debriefId=<%= d.id %>&returnTo=/tracking">+ הוספת משימה</a></p><% } else { %>
+        <table class="table inner">
+          <thead><tr><th>משימה</th><th>Owner</th><th>יעד</th><th>סטטוס</th><th>התקדמות</th><th>תזכורת</th><th>עדכון אחרון</th><th></th></tr></thead>
+          <tbody>
+          <% r.tasks.forEach(function(t){ var last = (t.notes || []).filter(function(n){return n.text && !n.system}).slice(-1)[0]; %>
+            <tr class="<%= isOverdue(t) ? 'row-overdue' : '' %>">
+              <td><a href="/tasks/<%= t.id %>"><%= t.title %></a></td>
+              <td><%= userName(t.assigneeId) %></td>
+              <td class="nowrap"><%= fmtDate(t.dueDate) %><% if (isOverdue(t)) { %> <span class="text-danger small">(<%= -daysLeft(t) %> ימי איחור)</span><% } %></td>
+              <td><%- include('partials/badge', { item: C.taskStatus(t.status) }) %></td>
+              <td>
+                <form method="POST" action="/tasks/<%= t.id %>/progress" class="inline quick-progress">
+                  <input type="hidden" name="returnTo" value="/tracking?<%= new URLSearchParams(filters).toString() %>">
+                  <input type="number" name="progress" min="0" max="100" step="5" value="<%= t.progress || 0 %>" aria-label="אחוז">%
+                  <button class="btn btn-xs">עדכון</button>
+                </form>
+              </td>
+              <td class="small"><%= t.reminderDays === 0 ? 'כבויה' : 'כל ' + (t.reminderDays || settings.taskReminderDays) + ' ימים' %>
+                <% if (t.status !== 'done') { %><form method="POST" action="/tasks/<%= t.id %>/remind" class="inline"><input type="hidden" name="returnTo" value="/tracking"><button class="btn btn-xs btn-ghost" title="שליחת תזכורת עכשיו">✉</button></form><% } %></td>
+              <td class="small muted"><%= last ? last.text.slice(0, 70) : '' %></td>
+              <td></td>
+            </tr>
+          <% }) %>
+          </tbody>
+        </table>
+        <% } %>
+      </td>
+    </tr>
+  </tbody>
+  <% }) %>
+  <% if (!rows.length) { %><tbody><tr><td colspan="14" class="muted center">לא נמצאו תחקירים</td></tr></tbody><% } %>
+</table>
+</div>
+<%- include('partials/bottom') %>

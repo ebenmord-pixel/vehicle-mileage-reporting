@@ -1,0 +1,40 @@
+<%# ממצאים — משמש גם בעמוד התחקיר וגם במצב ישיבה. d, manage, ret, departments %>
+<% if (!d.findings.length) { %><p class="muted">טרם הוזנו ממצאים.</p><% } %>
+<ol class="items">
+<% d.findings.forEach(function(f, i){ %>
+  <li class="item item-<%= f.type %>">
+    <div class="item-body">
+      <div><%- nl2br(f.text) %></div>
+      <div class="item-meta">
+        <%- include('badge', { item: C.findingType(f.type) }) %>
+        <% if (f.rootCause) { %><span class="badge badge-blue">גורם שורש: <%= f.rootCause %></span><% } %>
+        <% if (f.departmentId) { %><span class="badge badge-gray"><%= deptName(f.departmentId) %></span><% } %>
+      </div>
+    </div>
+    <% if (manage) { %>
+    <div class="item-actions">
+      <form method="POST" action="/debriefs/<%= d.id %>/findings/<%= f.id %>/move" class="inline"><input type="hidden" name="returnTo" value="<%= ret %>"><button name="dir" value="up" class="btn btn-xs btn-ghost" <%= i === 0 ? 'disabled' : '' %>>▲</button><button name="dir" value="down" class="btn btn-xs btn-ghost" <%= i === d.findings.length - 1 ? 'disabled' : '' %>>▼</button></form>
+      <details class="edit-pop"><summary class="btn btn-xs btn-ghost">✎</summary>
+        <form method="POST" action="/debriefs/<%= d.id %>/findings/<%= f.id %>" class="form">
+          <input type="hidden" name="returnTo" value="<%= ret %>">
+          <textarea name="text" rows="3"><%= f.text %></textarea>
+          <%- include('finding-selects', { f: f, departments: departments }) %>
+          <button class="btn btn-sm btn-primary">שמירה</button>
+        </form>
+      </details>
+      <form method="POST" action="/debriefs/<%= d.id %>/findings/<%= f.id %>/delete" class="inline" data-confirm="למחוק את הממצא?"><input type="hidden" name="returnTo" value="<%= ret %>"><button class="btn btn-xs btn-ghost text-danger">✕</button></form>
+    </div>
+    <% } %>
+  </li>
+<% }) %>
+</ol>
+<% if (manage) { %>
+<form method="POST" action="/debriefs/<%= d.id %>/findings" class="form add-item">
+  <input type="hidden" name="returnTo" value="<%= ret %>">
+  <textarea name="text" rows="2" placeholder="ממצא חדש..." required></textarea>
+  <div class="row">
+    <%- include('finding-selects', { f: {}, departments: departments }) %>
+    <button class="btn btn-primary">+ הוספת ממצא</button>
+  </div>
+</form>
+<% } %>
